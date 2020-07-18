@@ -1,8 +1,10 @@
 use std::fmt::{Display, Formatter};
+mod parse_args;
+use parse_args::Frame;
 
-fn main() {
-
-    let mut game = Game::new();
+fn main() -> Result<(), parse_args::ParseError> {
+    let frame = parse_args::parse_args()?;
+    let mut game = Game::new(frame);
     let sleep_duration = std::time::Duration::from_millis(33);
     loop {
         println!("{}", game);
@@ -14,11 +16,6 @@ fn main() {
 struct Game {
     frame: Frame,
     ball: Ball,
-}
-
-struct Frame {
-    width: u32,
-    height: u32,
 }
 
 struct Ball {
@@ -39,16 +36,14 @@ enum HorizDir {
 }
 
 impl Game {
-    fn new() -> Game {
-        Game {
-            frame: Frame { width: 50, height: 26 },
-            ball: Ball {
-                x: 2,
-                y: 4,
-                vert_dir: VertDir::Up,
-                horiz_dir: HorizDir::Left,
-            }
-        }
+    fn new(frame: Frame) -> Game {
+        let ball = Ball {
+            x: 2,
+            y: 4,
+            vert_dir: VertDir::Up,
+            horiz_dir: HorizDir::Left,
+        };
+        Game { frame, ball }
     }
 
     fn step(&mut self) {
