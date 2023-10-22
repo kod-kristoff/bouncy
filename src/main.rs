@@ -1,14 +1,29 @@
 use std::fmt::{Display, Formatter};
 mod parse_args;
-use parse_args::Frame;
 
 fn main() -> Result<(), parse_args::ParseError> {
-    let frame = parse_args::parse_args()?;
+    let window = pancurses::initscr();
+    let (max_y, max_x) = window.get_max_yx();
+    println!("max = ({}, {})", max_x, max_y);
+    let frame = Frame {
+        width: (max_x - 4) as u32,
+        height: (max_y - 4) as u32
+    };
     let mut game = Game::new(frame);
     let sleep_duration = std::time::Duration::from_millis(33);
+    window.draw_box('|', '-');
     loop {
-        println!("{}", game);
+        window.mvaddch(
+            game.ball.y as i32,
+            game.ball.x as i32,
+            ' ');
         game.step();
+        window.mvaddch(
+            game.ball.y as i32,
+            game.ball.x as i32,
+            'o'
+        );
+        window.refresh();
         std::thread::sleep(sleep_duration);
     }
 }
@@ -16,6 +31,11 @@ fn main() -> Result<(), parse_args::ParseError> {
 struct Game {
     frame: Frame,
     ball: Ball,
+}
+
+struct Frame {
+    width: u32,
+    height: u32,
 }
 
 struct Ball {
@@ -59,7 +79,7 @@ impl Display for Game {
             for _ in 0..self.frame.width {
                 write!(f, "-")?;
             }
-            write!(f, "+\n")
+            write!(f, "+\r\n")
         };
         top_bottom(f)?;
         for row in 0..self.frame.height {
@@ -72,7 +92,7 @@ impl Display for Game {
                 };
                 write!(f, "{}", c)?;
             }
-            write!(f, "|\n")?;
+            write!(f, "|\r\n")?;
         }
         top_bottom(f)
     }
@@ -80,13 +100,13 @@ impl Display for Game {
 
 impl Ball {
     fn bounce(&mut self, frame: &Frame) {
-        if self.x == 0 {
+        if self.x == 1 {
             self.horiz_dir = HorizDir::Right;
         } else if self.x == frame.width - 1 {
             self.horiz_dir = HorizDir::Left;
         }
 
-        if self.y == 0 {
+        if self.y == 1 {
             self.vert_dir = VertDir::Down;
         } else if self.y == frame.height - 1 {
             self.vert_dir = VertDir::Up;
